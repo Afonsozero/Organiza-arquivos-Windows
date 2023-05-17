@@ -1,10 +1,9 @@
-import os # Importando o módulo os para trabalhar com o sistema operacional
-import shutil # Importando o módulo shutil para manipular arquivos e diretórios
+import os
+import shutil
 from tkinter import *
 from tkinter import filedialog
-from tqdm import tqdm # Importando a biblioteca tqdm para mostrar uma barra de progresso
+from tqdm import tqdm
 
-# Definindo as extensões de arquivos e suas respectivas pastas de destino
 extensoes = {
     '.jpg': 'imagens',
     '.jpeg': 'imagens',
@@ -14,43 +13,54 @@ extensoes = {
     '.mkv': 'videos',
     '.mp3': 'musicas',
     '.wav': 'musicas',
+    '.pdf': 'documentos',
+    '.rar': 'compactados',
+    '.zip': 'compactados',
+    '.doc': 'documentos',
+    '.docx': 'documentos',
 }
 
-# Criando a janela de opções
 root = Tk()
 root.withdraw()
 
-# Solicitando o diretório para o usuário
 dir = filedialog.askdirectory()
 
-# Verificando se o diretório existe
 if not os.path.exists(dir):
     print("Diretório não encontrado!")
 else:
-    # Obtendo a lista de todos os arquivos no diretório
     lista_arquivos = []
     for pasta_raiz, pastas, arquivos in os.walk(dir):
         for arquivo in arquivos:
             lista_arquivos.append(os.path.join(pasta_raiz, arquivo))
 
-    # Percorrendo todos os arquivos e movendo para a pasta de destino correspondente
     for arquivo in tqdm(lista_arquivos):
-        # Obtendo a extensão do arquivo
         extensao = os.path.splitext(arquivo)[1].lower()
 
-        # Verificando se a extensão está na lista de extensões definidas
         if extensao in extensoes:
-            # Obtendo o caminho completo do arquivo e da pasta de destino
             pasta_destino = os.path.join(dir, extensoes[extensao])
 
-            # Criando a pasta de destino, se ela não existir ainda
             if not os.path.exists(pasta_destino):
                 os.makedirs(pasta_destino)
 
+            nome_arquivo = os.path.basename(arquivo)
+            destino_arquivo = os.path.join(pasta_destino, nome_arquivo)
+
+            # Lidar com arquivos duplicados
+            if os.path.exists(destino_arquivo):
+                novo_nome = nome_arquivo
+                contador = 1
+                while os.path.exists(destino_arquivo):
+                    nome_sem_extensao = os.path.splitext(nome_arquivo)[0]
+                    nova_extensao = os.path.splitext(nome_arquivo)[1]
+                    novo_nome = f"{nome_sem_extensao}_{contador}{nova_extensao}"
+                    destino_arquivo = os.path.join(pasta_destino, novo_nome)
+                    contador += 1
+
+                print(f"Arquivo duplicado encontrado. Renomeando para: {novo_nome}")
+
             try:
-                # Movendo o arquivo para a pasta de destino
-                shutil.move(arquivo, os.path.join(pasta_destino, os.path.basename(arquivo)))
+                shutil.move(arquivo, destino_arquivo)
+            except PermissionError:
+                print(f"Erro de permissão ao mover o arquivo {arquivo}")
             except Exception as e:
-                # Se não for possível mover o arquivo, exibir uma mensagem de erro e pular para o próximo arquivo
                 print(f"Erro ao mover o arquivo {arquivo}: {str(e)}")
-                continue
